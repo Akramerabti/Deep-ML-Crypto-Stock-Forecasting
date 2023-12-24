@@ -1,5 +1,8 @@
 from urllib.request import urlopen, Request
-from bs4 import BeautifulSoup
+from bsgit4 import BeautifulSoup
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import pandas as pd
+import matplotlib.pyplot as plt
 
 finviz_url = 'https://finviz.com/quote.ashx?t='
 

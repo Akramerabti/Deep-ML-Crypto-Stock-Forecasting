@@ -7,5 +7,11 @@
         "*test.py"
     ],
     "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": true,
+    "terminal.integrated.shell.windows": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "terminal.integrated.shellArgs.windows": [
+        "-ExecutionPolicy",
+        "ByPass",
+        "-File",
+        "${workspaceFolder}/activate_venv.ps1"]  
 }

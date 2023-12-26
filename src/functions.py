@@ -1,5 +1,5 @@
 import yfinance as yf
-import pandas as pd
+import pandas as pd  # Add this line
 import numpy as np
 import tkinter as tk
 from tkinter import ttk
@@ -9,8 +9,11 @@ import mplfinance as mpf
 import matplotlib.dates as mdates
 from win32api import GetSystemMetrics
 from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential,load_model
+from keras.models import Sequential, load_model
 from keras.layers import LSTM, Dense
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
 
 # Function to fetch stock data using yfinance
 def get_stock_data(symbol, start_date, end_date):
@@ -61,7 +64,40 @@ def predict_stock_prices(data):
 
     return predictions
 
-def display_predictions(stock_name, future_dates, predicted_prices):
+# Function to fetch stock data using yfinance and Selenium
+def get_stock_data_with_selenium(symbol, start_date, end_date):
+    # Use Selenium to open a browser and navigate to a financial website
+    driver = webdriver.Chrome()  # You may need to specify the path to your chromedriver executable
+    driver.get(f'https://finance.yahoo.com/quote/{symbol}/history?p={symbol}')
+
+    # Use Selenium to interact with the website and input date ranges
+    start_date_input = driver.find_element(By.NAME, 'startDate')
+    start_date_input.clear()
+    start_date_input.send_keys(start_date)
+
+    end_date_input = driver.find_element(By.NAME, 'endDate')
+    end_date_input.clear()
+    end_date_input.send_keys(end_date)
+    end_date_input.send_keys(Keys.RETURN)
+
+    # Wait for the data to load (you might need to adjust the waiting time based on the website)
+    driver.implicitly_wait(10)
+
+    # Extract data from the website
+    # (You'll need to customize this part based on the structure of the website)
+    # Example: extracting closing prices
+    closing_prices = [float(price.text.replace(',', '')) for price in driver.find_elements(By.XPATH, "//td[@data-col='close']/span")]
+
+    # Close the browser
+    driver.quit()
+
+    # Create a DataFrame using the extracted data
+    data = pd.DataFrame({'Close': closing_prices})
+
+    return data
+
+# Function to display predictions in the GUI
+def display_predictions(predictions_tab, stock_symbol, future_dates, predicted_prices):
     # Ensure future_dates and predicted_prices have the same dimension
     future_dates = future_dates[:len(predicted_prices)]
 
@@ -73,7 +109,7 @@ def display_predictions(stock_name, future_dates, predicted_prices):
     prediction_frame = ttk.Frame(predictions_tab)
     prediction_frame.pack(pady=10)
 
-    title = f"{stock_name} Predictions"
+    title = f"{stock_symbol} Predictions"
     title_label = ttk.Label(prediction_frame, text=title)
     title_label.pack()
 
@@ -125,101 +161,3 @@ def create_chart(data, stock_name, current_price, predicted_prices=None):
     
     # Return the figure without displaying it in the Tkinter window
     return fig
-
-# Function to handle button click event
-def button_click(stock_symbol, start_date, end_date):
-    # Destroy the existing chart widgets if they exist
-    for widget in container_frame.winfo_children():
-        if isinstance(widget, FigureCanvasTkAgg):
-            widget.destroy()
-
-    stock_data = get_stock_data(stock_symbol, start_date, end_date)
-    current_price = stock_data['Close'][-1]
-
-    # Create and display the chart in the container frame
-    chart = create_chart(stock_data, stock_symbol, current_price)
-    canvas = FigureCanvasTkAgg(chart, master=container_frame)
-    canvas_widget = canvas.get_tk_widget()
-    canvas_widget.pack(expand=True, fill='both')
-
-    # Update the container frame
-    container_frame.update_idletasks()
-
-    # Predict stock prices for the next 30 days
-    last_date = stock_data.index[-1]
-    future_dates = pd.date_range(start=last_date, periods=30, freq='B')[1:]
-    predicted_prices = predict_stock_prices(stock_data)
-
-    # Display predictions
-    display_predictions(stock_symbol, future_dates, predicted_prices)
-
-
-# Function to switch to the predictions page
-def show_predictions_page():
-    notebook.select(predictions_tab)
-
-# Create the main window
-window = tk.Tk()
-window.title("Stock Market Analysis")
-
-# Set the window size to the screen size
-screen_width = GetSystemMetrics(0)
-screen_height = GetSystemMetrics(1)
-window.geometry(f"{screen_width}x{screen_height}")
-
-# Create a notebook (tabs container)
-notebook = ttk.Notebook(window)
-
-# Home Page
-home_tab = ttk.Frame(notebook)
-notebook.add(home_tab, text="Home")
-
-# Create a container frame for graphs
-container_frame = ttk.Frame(home_tab)
-container_frame.pack(expand=True, fill='both')
-
-# Label for error messages
-error_label = ttk.Label(home_tab, text="", foreground="red")
-error_label.pack(pady=10)
-
-# Button for most popular stocks
-popular_stocks_frame = ttk.Frame(home_tab)
-popular_stocks_frame.pack(pady=10)
-
-popular_stocks_label = ttk.Label(popular_stocks_frame, text="Most Popular Stocks:")
-popular_stocks_label.pack(side="left", padx=10)
-
-# Example popular stocks (replace with actual popular stocks)
-popular_stocks = ["AAPL", "GOOGL", "AMZN", "MSFT"]
-for stock in popular_stocks:
-    button = ttk.Button(popular_stocks_frame, text=stock, command=lambda s=stock: button_click(s, '2020-01-01', '2023-12-31'))
-    button.pack(side="left", padx=5)
-
-# Section for pinged stocks (replace with actual functionality)
-pinged_stocks_frame = ttk.Frame(home_tab)
-pinged_stocks_frame.pack(pady=10)
-
-pinged_stocks_label = ttk.Label(pinged_stocks_frame, text="Pinged Stocks:")
-pinged_stocks_label.pack(side="left", padx=10)
-
-# Example pinged stocks (replace with actual pinged stocks)
-pinged_stocks = ["GOOGL", "MSFT", "AAPL"]
-for stock in pinged_stocks:
-    button = ttk.Button(pinged_stocks_frame, text=stock, command=lambda s=stock: button_click(s, '2020-01-01', '2023-12-31'))
-    button.pack(side="left", padx=5)
-
-# Button to switch to the predictions page
-predictions_button_home = ttk.Button(home_tab, text="Go to Predictions", command=show_predictions_page)
-predictions_button_home.pack(pady=10)
-
-# Predictions Page
-predictions_tab = ttk.Frame(notebook)
-notebook.add(predictions_tab, text="Predictions")
-
-# Placeholder content for the predictions page
-predictions_label = ttk.Label(predictions_tab, text="This is the predictions page.")
-predictions_label.pack(pady=10)
-
-# Start the application
-notebook.pack(expand=True, fill="both")
-window.mainloop()

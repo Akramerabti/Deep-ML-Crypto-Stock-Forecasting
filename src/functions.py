@@ -21,7 +21,7 @@ def get_stock_data(symbol, start_date, end_date):
     return data
 
 # Function to predict stock prices using LSTM
-def predict_stock_prices(data):
+def predict_stock_prices(data, num_days=30):
     # Extracting the closing prices
     dataset = data['Close'].values.reshape(-1, 1)
 
@@ -56,11 +56,19 @@ def predict_stock_prices(data):
     test_data = dataset_scaled[len(dataset_scaled) - 60:, :]
 
     # Reshaping the data
+    test_data = dataset_scaled[len(dataset_scaled) - 60:, :]
+
+    # Reshaping the data
     test_data = np.reshape(test_data, (1, test_data.shape[0], 1))
 
-    # Making predictions
-    predictions = model.predict(test_data)
-    predictions = scaler.inverse_transform(predictions)
+    # Making predictions for multiple days into the future
+    predictions = []
+    for _ in range(num_days):
+        prediction = model.predict(test_data)
+        predictions.append(scaler.inverse_transform(prediction))
+
+        # Update test_data for the next prediction
+        test_data = np.append(test_data[:, 1:, :], prediction.reshape(1, 1, 1), axis=1)
 
     return predictions
 
@@ -101,9 +109,8 @@ def display_predictions(predictions_tab, stock_symbol, future_dates, predicted_p
     # Ensure future_dates and predicted_prices have the same dimension
     future_dates = future_dates[:len(predicted_prices)]
 
-    # Print the data for debugging
-    print("Future Dates:", future_dates)
-    print("Predicted Prices:", predicted_prices)
+    # Flatten the predicted prices array
+    predicted_prices = np.array([price[0][0] for price in predicted_prices])
 
     # Create a new frame for each stock prediction
     prediction_frame = ttk.Frame(predictions_tab)

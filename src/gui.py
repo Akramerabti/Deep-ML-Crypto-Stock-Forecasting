@@ -92,71 +92,71 @@ class MainWindow:
         for widget in self.container_frame.winfo_children():
             if isinstance(widget, FigureCanvasTkAgg):
                 widget.destroy()
-
+    
         stock_data = get_stock_data(stock_symbol, start_date, end_date)
         current_price = stock_data['Close'][-1]
-
+    
         # Create and display the chart in the container frame
         chart = create_chart(stock_data, stock_symbol, current_price)
         canvas = FigureCanvasTkAgg(chart, master=self.container_frame)
         canvas_widget = canvas.get_tk_widget()
         canvas_widget.pack(expand=True, fill='both')
-
+    
         # Update the container frame
         self.container_frame.update_idletasks()
-
+    
         # Predict stock prices for the next 30 days
         last_date = stock_data.index[-1]
-        future_dates = pd.date_range(start=last_date, periods=30, freq='B')[1:]
-        predicted_prices = predict_stock_prices(stock_data)
-
+        future_dates = pd.date_range(start=last_date, periods=30, freq='B')
+        predicted_prices = predict_stock_prices(stock_data, num_days=30)
+    
         # Display predictions
         display_predictions(self.predictions_tab, stock_symbol, future_dates, predicted_prices)
-    
+
     def scrape_data_button_click(self, stock_symbol, start_date, end_date):
         try:
             # Fetch stock data
             stock_data = get_stock_data(stock_symbol, start_date, end_date)
-
+    
             # Predict stock prices for the next 30 days
             last_date = stock_data.index[-1]
             future_dates = pd.date_range(start=last_date, periods=30, freq='B')[1:]
-            predicted_prices = predict_stock_prices(stock_data)
-
+            predicted_prices = predict_stock_prices(stock_data, num_days=30)
+    
             # Display predictions
-            display_predictions(stock_symbol, future_dates, predicted_prices)
-
+            display_predictions(self.predictions_tab, stock_symbol, future_dates, predicted_prices)
+    
             # Save data to a CSV file (you can customize the filename)
             csv_filename = f"{stock_symbol}_data.csv"
             stock_data.to_csv(csv_filename, index=False)
-
+    
             # Show success message
             self.error_label.config(text=f"Data scraped successfully and saved to {csv_filename}", foreground="green")
-
+    
         except Exception as e:
-            # Show error message
+        # Show error message
             self.error_label.config(text=f"Error: {str(e)}", foreground="red")
 
     def scrape_data_button_click_with_selenium(self, stock_symbol, start_date, end_date):
         try:
             # Fetch stock data using Selenium
             stock_data = get_stock_data_with_selenium(stock_symbol, start_date, end_date)
-
+    
             # Predict stock prices for the next 30 days
             last_date = stock_data.index[-1]
             future_dates = pd.date_range(start=last_date, periods=30, freq='B')[1:]
-            predicted_prices = predict_stock_prices(stock_data)
-
+            predicted_prices = predict_stock_prices(stock_data, num_days=30)
+    
             # Display predictions
-            display_predictions(stock_symbol, future_dates, predicted_prices)
-
+            display_predictions(self.predictions_tab, stock_symbol, future_dates, predicted_prices)
+    
             # Save data to a CSV file (you can customize the filename)
             csv_filename = f"{stock_symbol}_data_with_selenium.csv"
             stock_data.to_csv(csv_filename, index=False)
-
+    
             # Show success message
             self.error_label.config(text=f"Data scraped successfully and saved to {csv_filename}", foreground="green")
-
+    
         except Exception as e:
             # Show error message
             self.error_label.config(text=f"Error: {str(e)}", foreground="red")
